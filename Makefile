@@ -17,6 +17,9 @@ TEST2 = test2
 
 TEST3 = test3
 TEST4 = test4
+TEST5 = test5
+
+LEAK_TEST = leak
 
 all: $(OUTPUT)
 
@@ -41,7 +44,15 @@ $(TEST3): test_files/test3.c
 $(TEST4): test_files/test4.c
 	$(CC) $(CFLAGS) -o $(TEST) test_files/test4.c $(LFLAGS)
 
+$(TEST5): test_files/test5.c
+	$(CC) $(CFLAGS) -o $(TEST) test_files/test5.c $(LFLAGS)
+
+$(LEAK_TEST): test_files/leak_test.c
+	$(CC) $(CFLAGS) -o $(TEST) test_files/leak_test.c $(LFLAGS)
+
+
 clean:
 	rm ./*.o ./*.a $(TEST)
 
-
+tclean:
+	rm ./$(TEST)

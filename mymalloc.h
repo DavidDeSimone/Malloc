@@ -14,7 +14,7 @@
  * to the left side of the heap, while largers requests are
  * allocated to the right.
  */
-#define SMALL_ALLOCATION 200
+#define SMALL_ALLOCATION 350
 
 #define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
 #define free( x ) myfree( x, __FILE__, __LINE__ )
@@ -34,6 +34,12 @@ void myfree(void *ptr, char *FILE, int LINE);
  * formation
  */
 void printerr(char *msg, char *FILE, int LINE);
+
+/* Function called at program exit (via atexit()) to check for
+ * memory leaks on the heap. 
+ * Will print formatted message of the leak if found. 
+ */
+void leak_check();
 
 
 #endif

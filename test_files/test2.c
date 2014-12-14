@@ -9,8 +9,6 @@ int main(int argc, char **args) {
   
   printf("Allocated at %p and %p for 1000 bytes each\n", alloc, salloc);
 
-
-
   void *dalloc = malloc ( 10000 );
   
   printf("This allocation should have failed!\n");

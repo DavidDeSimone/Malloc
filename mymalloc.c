@@ -27,7 +27,7 @@ void* mymalloc(size_t size, char *FILE, int LINE) {
   /* Iterate over memory blocks, find free blocks */
   block *min = NULL;
   while(front != NULL) {
-    if(front->open == TRUE && front->size > size) {
+    if(front->open == TRUE && front->size >= size) {
       
       /* Set the minimum if we find a smaller open block */
       if(!min) {
@@ -90,40 +90,40 @@ void* mymalloc(size_t size, char *FILE, int LINE) {
 	  /* Set the current item to point to the new header */
 	  min->next = (char *)min + size;
 	  min->open = FALSE;
+	  min->size = size;
 	  
 	  return min->addr;
 
 	} else {
-	  /* Else we have the case where we only have enough room to add a header and no data */
-	  min->next = NULL;
-	  min->open = FALSE;
+	  /* If our allocation amount is larger than
+	   * SMALL_ALLOCATION, we allocate to the RIGHT side of the heap
+	   */
+	  add.prev = min;
+	  add.next = min->next;
 
-	  return min->addr;
+	  add.addr = min->addr + (min->size - size);
+	  
+	  add.size = size;
+	  add.open = FALSE;
 
+	  memcpy(min->addr + (min->size - size - sizeof(block)), &add, sizeof(block));
+
+	  min->next = min->addr + min->size - size - sizeof(block);
+	  min->open = TRUE;
+	  min->size = min->size - size - sizeof(block);
+
+	  return min->next->addr;
 	}
 
       } else {
-	/* If our allocation amount is larger than
-	 * SMALL_ALLOCATION, we allocate to the RIGHT side of the heap
-	 */
-	add.prev = min;
-	add.next = min->next;
-
-	add.addr = min->addr + (min->size - size);
+	/* Else we have the case where we only have enough room to add a header and no data */
+	min->next = NULL;
+	min->open = FALSE;
 	
-	add.size = size;
-	add.open = TRUE;
-
-	memcpy(min->addr + (min->size - size - sizeof(block)), &add, sizeof(block));
-
-	min->next = (char *)min->size - size - sizeof(block);
-
-	return min->next->addr;
+	return min->addr;
+	
       }
-
-
     }
-
 
   } else {
     printerr("Not enough heap space", FILE, LINE);
@@ -155,6 +155,7 @@ void myfree(void *ptr, char *FILE, int LINE) {
       front->open = TRUE;
       /* Attempt to merge with right block if it's free */
       if(front->next != NULL && front->next->open == TRUE) {
+	front->size += front->next->size;
 
 	front->next = front->next->next;	
 	if(front->next != NULL) {
@@ -165,7 +166,8 @@ void myfree(void *ptr, char *FILE, int LINE) {
       
       /* Attempt to merge with left block it it's free */
       if(front->prev != NULL && front->prev->open == TRUE) {
-       
+	front->prev->size += front->size;
+
 	if(front->next != NULL) {
 	  front->next->prev = front->prev;
 	}
@@ -185,7 +187,37 @@ void myfree(void *ptr, char *FILE, int LINE) {
 
 }
 
-
 void printerr(char *msg, char *FILE, int LINE) {
-  printf("Error in %s at %d: %s\n", FILE, LINE, msg);
+  printf("Error in %s at line %d: %s\n", FILE, LINE, msg);
+}
+
+void leak_check() {
+  int _def_lost = 0;
+  int _blocks_lost = 0;
+  
+  if(!initalized) {
+    /* Heap was never set, return silently */
+    return;
+  }
+
+
+  block *front = (block *)myheap;
+
+  while(front != NULL) {
+
+    if(!front->open) {
+      /* We have a memory leak! */
+      printf("Memory leak detected @ %p, %d bytes definitly lost\n", front->addr, front->size);
+      _def_lost += front->size;
+      ++_blocks_lost;
+    }
+
+    front = front->next;
+  }
+
+  if(_def_lost > 0) {
+    printf("Final Report, %d bytes of memory lost accross %d blocks\n", _def_lost, _blocks_lost); 
+  }
+
+
 }
