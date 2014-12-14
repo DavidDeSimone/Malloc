@@ -1,0 +1,16 @@
+#ifndef MALLOC_H
+#define MALLOC_H
+
+#include "block.h"
+
+
+#define HEAP_SIZE 5000
+
+#define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
+#define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
+
+void* mymalloc(size_t size, char *FILE, char *LINE);
+void free(void *ptr, char *FILE, char *LINE); 
+
+
+#endif
