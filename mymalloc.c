@@ -5,6 +5,7 @@
 /* Heap size defined in mymalloc.h */
 char myheap[HEAP_SIZE];
 
+/* Global variable used to denote if the heap has been initalized */
 static uint8_t initalized = FALSE;
 
 void* mymalloc(size_t size, char *FILE, int LINE) {
@@ -51,7 +52,6 @@ void* mymalloc(size_t size, char *FILE, int LINE) {
   /* If our minimum block is the perfect size.. */
   if(min->size == size) {
     min->open = FALSE;
-    //TODO make sure this is accounting for the block size in the pointer
     return min->addr;
   }
 
@@ -66,39 +66,61 @@ void* mymalloc(size_t size, char *FILE, int LINE) {
 	/* Initalize block header to be added */
 	struct block add;
  
-	/* Insert new block after current item */
-	add.next = min->next;
-	add.prev = min;
+	if(size < SMALL_ALLOCATION) {
+	  /* Insert new block after current item */
+	  add.next = min->next;
+	  add.prev = min;
 
-	/* Set the address of the block to be the current address plus the offset
-	 * of size we are allocating plus the size of the header
-	 */
-	add.addr = (char *)min + size + sizeof(block);
+	  /* Set the address of the block to be the current address plus the offset
+	   * of size we are allocating plus the size of the header
+	   */
+	  add.addr = (char *)min + size + sizeof(block);
 
-	/* The size of the new block will be the current size minus the allocated chunk minus the size of the 
-	 * new header
-	 */
-	add.size = (char *)min->size - size - sizeof(block);
-	add.open = TRUE;
+	  /* The size of the new block will be the current size minus the allocated chunk minus the size of the 
+	   * new header
+	   */
+	  add.size = (char *)min->size - size - sizeof(block);
+	  add.open = TRUE;
 
-	/* Copy the new header onto the heap */
-	/* min must be casted as a char* to ensure we only move forward size bytes 
-           and not sizeof(block) * size bytes */
-	memcpy((char *)min + size, &add, sizeof(struct block));
+	  /* Copy the new header onto the heap */
+	  /* min must be casted as a char* to ensure we only move forward size bytes 
+	     and not sizeof(block) * size bytes */
+	  memcpy((char *)min + size, &add, sizeof(struct block));
+	  
+	  /* Set the current item to point to the new header */
+	  min->next = (char *)min + size;
+	  min->open = FALSE;
+	  
+	  return min->addr;
 
-	/* Set the current item to point to the new header */
-	min->next = (char *)min + size;
-	min->open = FALSE;
+	} else {
+	  /* Else we have the case where we only have enough room to add a header and no data */
+	  min->next = NULL;
+	  min->open = FALSE;
 
-	return min->addr;
+	  return min->addr;
+
+	}
 
       } else {
-	/* Else we have the case where we only have enough room to add a header and no data */
-	min->next = NULL;
-	min->open = FALSE;
+	/* If our allocation amount is larger than
+	 * SMALL_ALLOCATION, we allocate to the RIGHT side of the heap
+	 */
+	add.prev = min;
+	add.next = min->next;
 
-	return min->addr;
+	add.addr = min->addr + (min->size - size);
+	
+	add.size = size;
+	add.open = TRUE;
+
+	memcpy(min->addr + (min->size - size - sizeof(block)), &add, sizeof(block));
+
+	min->next = (char *)min->size - size - sizeof(block);
+
+	return min->next->addr;
       }
+
 
     }
 

@@ -9,6 +9,13 @@
 /* Defines the size of the simulated heap in bytes */
 #define HEAP_SIZE 5000
 
+/* Defines a "small allocation". The allocation rules state that
+ * all allocation requests below SMALL_ALLOCATION are allocated
+ * to the left side of the heap, while largers requests are
+ * allocated to the right.
+ */
+#define SMALL_ALLOCATION 200
+
 #define malloc( x ) mymalloc( x, __FILE__, __LINE__ )
 #define free( x ) myfree( x, __FILE__, __LINE__ )
 
