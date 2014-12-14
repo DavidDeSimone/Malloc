@@ -219,5 +219,4 @@ void leak_check() {
     printf("Final Report, %d bytes of memory lost accross %d blocks\n", _def_lost, _blocks_lost); 
   }
 
-
 }
