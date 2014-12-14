@@ -1,13 +1,18 @@
 #include "block.h"
 #include "mymalloc.h"
 
-char* heap_init(char *heap) {
+char* heap_init(char *heap[HEAP_SIZE]) {
   /* Initalize the heap initally as a empty block  */
   struct block add;
   add.next = NULL;
   add.prev = NULL;
 
-  add.addr = heap;
+  /* Offset the data pointer from the header block */
+  add.addr = heap + sizeof(struct block);
+
+  /* Set the inital size to be the size of the heap minus
+   * the data header
+   */
   add.size = HEAP_SIZE - sizeof(struct block);
   add.open = TRUE;
 
