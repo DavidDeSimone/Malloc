@@ -16,6 +16,7 @@ TEST1 = test1
 TEST2 = test2
 
 TEST3 = test3
+TEST4 = test4
 
 all: $(OUTPUT)
 
@@ -36,6 +37,9 @@ $(TEST2): test_files/test2.c
 
 $(TEST3): test_files/test3.c
 	$(CC) $(CFLAGS) -o $(TEST) test_files/test3.c $(LFLAGS)
+
+$(TEST4): test_files/test4.c
+	$(CC) $(CFLAGS) -o $(TEST) test_files/test4.c $(LFLAGS)
 
 clean:
 	rm ./*.o ./*.a $(TEST)
