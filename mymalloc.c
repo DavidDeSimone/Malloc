@@ -5,12 +5,9 @@
 /* Heap size defined in mymalloc.h */
 char myheap[HEAP_SIZE];
 
-void* mymalloc(size_t size, char *FILE, int LINE) {
-  static uint8_t initalized = FALSE;
-  
-  char *file = FILE;
-  char *line = LINE;
+static uint8_t initalized = FALSE;
 
+void* mymalloc(size_t size, char *FILE, int LINE) {
   if(!initalized) {
     heap_init(myheap);
     initalized = TRUE;
@@ -103,8 +100,6 @@ void* mymalloc(size_t size, char *FILE, int LINE) {
 	return min->addr;
       }
 
-
-
     }
 
 
@@ -113,17 +108,58 @@ void* mymalloc(size_t size, char *FILE, int LINE) {
     return NULL;
   }
 
-
-  //TODO Make sure you account for the header size on the heap (since the headers will be in the heap)
   printerr("Fallthrough error", FILE, LINE);
   return NULL;
 }
 
 void myfree(void *ptr, char *FILE, int LINE) {
-  //look through allocated blocks
-  //if the requested block is not found, throw error
-  //else, open the block, and merge with any adjacent free blocks
+  if(!initalized) {
+    printerr("Attempting to free unallocted pointer", FILE, LINE);
+    return;
+  }
 
+  block *front = (block *)myheap;
+
+  /* Look through allocated blocks */
+  while(front != NULL) {
+
+    /* If we find out address to free */
+    if(front->addr == ptr) {
+      if(front->open) {
+	printerr("Error, attempting to free already free'd memory", FILE, LINE);
+	return;
+      }
+
+      front->open = TRUE;
+      /* Attempt to merge with right block if it's free */
+      if(front->next != NULL && front->next->open == TRUE) {
+
+	front->next = front->next->next;	
+	if(front->next != NULL) {
+	  front->next->prev = front;
+	}
+
+      }
+      
+      /* Attempt to merge with left block it it's free */
+      if(front->prev != NULL && front->prev->open == TRUE) {
+       
+	if(front->next != NULL) {
+	  front->next->prev = front->prev;
+	}
+	front->prev->next = front->next;
+
+      }
+
+      /* Once memory is free'd, we can just return */
+      return;
+    }
+
+    front = front->next;
+  }
+
+  /* If the requested block is not found, throw error */
+  printerr("Error, attempting to free unalloacted pointer", FILE, LINE);
 
 }
 
