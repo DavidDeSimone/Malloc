@@ -1,14 +1,18 @@
 #include "mymalloc.h"
+#include "block.h"
 
 /* Character array used to simulate the heap on .data */
 /* Heap size defined in mymalloc.h */
 char myheap[HEAP_SIZE];
 
-void* mymalloc(size_t size, char *FILE, char *LINE) {
+void* mymalloc(size_t size, char *FILE, int LINE) {
   static uint8_t initalized = FALSE;
   
+  char *file = FILE;
+  char *line = LINE;
+
   if(!initalized) {
-    heap_init(&myheap);
+    heap_init(myheap);
     initalized = TRUE;
   }
 
@@ -51,14 +55,14 @@ void* mymalloc(size_t size, char *FILE, char *LINE) {
   if(min->size == size) {
     min->open = FALSE;
     //TODO make sure this is accounting for the block size in the pointer
-    return &min + sizeof(struct block);
+    return min->addr;
   }
 
   //If its too big, resize the block and add a new header
   if(min->size > size) {
 
     /* If we have enough room to add another header  */
-    if(min->size > (size - sizeof(struct block))) {
+    if(min->size >= (size - sizeof(struct block))) {
       
       /* If we have room for a header AND data */
       if(size - sizeof(struct block) > 0) {
@@ -72,26 +76,31 @@ void* mymalloc(size_t size, char *FILE, char *LINE) {
 	/* Set the address of the block to be the current address plus the offset
 	 * of size we are allocating plus the size of the header
 	 */
-	add.addr = &min + size + sizeof(block);
+	add.addr = (char *)min + size + sizeof(block);
 
 	/* The size of the new block will be the current size minus the allocated chunk minus the size of the 
 	 * new header
 	 */
-	add.size = min->size - size - sizeof(block);
+	add.size = (char *)min->size - size - sizeof(block);
 	add.open = TRUE;
 
 	/* Copy the new header onto the heap */
-	memcpy(min + size, &add, sizeof(block));
+	/* min must be casted as a char* to ensure we only move forward size bytes 
+           and not sizeof(block) * size bytes */
+	memcpy((char *)min + size, &add, sizeof(struct block));
 
 	/* Set the current item to point to the new header */
-	min->next = (block *)min + size;
+	min->next = (char *)min + size;
 	min->open = FALSE;
 
 	return min->addr;
 
       } else {
 	/* Else we have the case where we only have enough room to add a header and no data */
+	min->next = NULL;
+	min->open = FALSE;
 
+	return min->addr;
       }
 
 
@@ -99,24 +108,26 @@ void* mymalloc(size_t size, char *FILE, char *LINE) {
     }
 
 
+  } else {
+    printerr("Not enough heap space", FILE, LINE);
+    return NULL;
   }
 
 
-
-
   //TODO Make sure you account for the header size on the heap (since the headers will be in the heap)
-
-
+  printerr("Fallthrough error", FILE, LINE);
   return NULL;
 }
 
-void myfree(void *ptr, char *FILE, char *LINE) {
-
+void myfree(void *ptr, char *FILE, int LINE) {
+  //look through allocated blocks
+  //if the requested block is not found, throw error
+  //else, open the block, and merge with any adjacent free blocks
 
 
 }
 
 
-void printerr(char *msg, char *FILE, char *LINE) {
-  printf("Error in %s at %s: %s\n", FILE, LINE, msg);
+void printerr(char *msg, char *FILE, int LINE) {
+  printf("Error in %s at %d: %s\n", FILE, LINE, msg);
 }

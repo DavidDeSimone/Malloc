@@ -1,7 +1,6 @@
 #include "block.h"
-#include "mymalloc.h"
 
-char* heap_init(char *heap[HEAP_SIZE]) {
+char* heap_init(char heap[HEAP_SIZE]) {
   /* Initalize the heap initally as a empty block  */
   struct block add;
   add.next = NULL;
